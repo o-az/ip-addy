@@ -1,6 +1,6 @@
-# My IP
+# IP Addy
 
-A small Vite + React + TypeScript page that shows your public IP address and everything that can be derived from it or from your browser:
+Shows your public IP address and everything that can be derived from it or from your browser:
 
 - **IP**: public IPv4 (with copy button) and ISP up top, IPv6 in the table, lookup of any other IP
 - **Location**: city, region, postal code, country + flag, continent, capital, EU membership, calling code, coordinates, map (OpenStreetMap)
@@ -10,12 +10,3 @@ A small Vite + React + TypeScript page that shows your public IP address and eve
 - **Copy all as JSON**: every field above in one JSON blob
 
 IP data comes from free public APIs, tried in order until one succeeds: [ipwho.is](https://ipwho.is), [ipapi.co](https://ipapi.co), [ipinfo.io](https://ipinfo.io). IPv4/IPv6 detection uses [ipify](https://www.ipify.org). No API keys or backend required.
-
-## Development
-
-```sh
-npm install
-npm run dev      # start dev server
-npm run build    # type-check and build to dist/
-npm run lint     # oxlint
-```

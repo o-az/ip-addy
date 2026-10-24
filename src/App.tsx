@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  Fragment,
+  useEffect,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { browserRows, deviceRows } from './lib/client'
 import { fetchAddress, isValidIp, lookupIp, type IpInfo } from './lib/ip'
 import './App.css'
@@ -8,6 +15,31 @@ type LookupResult =
   | { target: string; status: 'ready'; info: IpInfo }
 
 type LookupState = LookupResult | { status: 'loading' }
+
+type UrlTarget = { target: string; invalid: string | null }
+
+const invalidMessage = (ip: string) => `"${ip}" is not a valid IPv4 or IPv6 address`
+
+/** Path lookups take precedence over legacy ?ip= links. Never fetch invalid input. */
+function readUrlTarget(): UrlTarget {
+  let path: string
+  try {
+    path = decodeURIComponent(window.location.pathname.slice(1).replace(/\/$/, ''))
+  } catch {
+    return { target: '', invalid: window.location.pathname.slice(1) }
+  }
+  const raw = path || new URLSearchParams(window.location.search).get('ip')?.trim() || ''
+  if (raw && !isValidIp(raw)) return { target: '', invalid: raw }
+  return { target: raw, invalid: null }
+}
+
+/** New lookups use paths; unrelated query parameters and the hash are kept. */
+function urlWithTarget(ip: string): string {
+  const url = new URL(window.location.href)
+  url.pathname = ip ? `/${ip}` : '/'
+  url.searchParams.delete('ip')
+  return url.toString()
+}
 
 type TableRow = [label: string, value: ReactNode]
 type Section = { title: string; rows: TableRow[]; footer?: ReactNode }
@@ -31,11 +63,13 @@ function CopyButton({
   label,
   idleText = 'Copy',
   className = 'copy',
+  iconOnly = false,
 }: {
   text: string
   label: string
   idleText?: string
   className?: string
+  iconOnly?: boolean
 }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
@@ -56,14 +90,32 @@ function CopyButton({
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
-  // Both labels occupy the same grid cell, so the button width never changes.
+  // Text labels share a grid cell; icon feedback keeps the same dimensions.
   return (
-    <button type="button" className={className} onClick={copy} aria-label={label}>
-      <span className={copied ? 'hidden' : undefined}>{idleText}</span>
-      <span className={copied ? undefined : 'hidden'} aria-live="polite">
-        Copied
-      </span>
-    </button>
+    <>
+      <button type="button" className={className} onClick={copy} aria-label={label} title={label}>
+        {iconOnly ? (
+          <>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {copied ? <path d="m5 12 4 4L19 6" /> : (
+                <>
+                  <rect x="8" y="8" width="12" height="12" rx="2" />
+                  <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+                </>
+              )}
+            </svg>
+          </>
+        ) : (
+          <>
+            <span className={copied ? 'hidden' : undefined}>{idleText}</span>
+            <span className={copied ? undefined : 'hidden'} aria-live="polite">
+              Copied
+            </span>
+          </>
+        )}
+      </button>
+      {iconOnly && <span className="sr-only" role="status">{copied ? 'Copied' : ''}</span>}
+    </>
   )
 }
 
@@ -178,20 +230,22 @@ function InfoTable({ sections }: { sections: Section[] }) {
 }
 
 export default function App() {
-  const [query, setQuery] = useState('')
-  const [target, setTarget] = useState('') // '' means "my own IP"
+  const [initial] = useState(readUrlTarget)
+  const [target, setTarget] = useState(initial.target) // '' means "my own IP"
+  const [badIp, setBadIp] = useState(initial.invalid) // invalid URL value, never fetched
+  const [draft, setDraft] = useState(initial.invalid ?? initial.target)
   const [result, setResult] = useState<LookupResult | null>(null)
   // undefined = still resolving, null = not available on this network.
   const [v4, setV4] = useState<string | null | undefined>(undefined)
   const [v6, setV6] = useState<string | null | undefined>(undefined)
-  const [inputError, setInputError] = useState<string | null>(null)
+  const [inputError, setInputError] = useState<string | null>(initial.invalid === null ? null : invalidMessage(initial.invalid))
 
   const [device] = useState(deviceRows)
   const [browser] = useState(browserRows)
 
   // For "my IP", look up the IPv4 address so the details match the headline; fall
   // back to whatever address the provider sees when there is no IPv4. null = wait.
-  const lookupKey = target || (v4 === undefined ? null : (v4 ?? ''))
+  const lookupKey = badIp !== null ? null : target || (v4 === undefined ? null : (v4 ?? ''))
 
   // A result for a previous key means the current lookup is still in flight.
   const state: LookupState =
@@ -224,15 +278,57 @@ export default function App() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const onPop = () => {
+      const next = readUrlTarget()
+      setTarget(next.target)
+      setBadIp(next.invalid)
+      setDraft(next.invalid ?? next.target)
+      setInputError(next.invalid === null ? null : invalidMessage(next.invalid))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const goTo = (ip: string) => {
+    if (urlWithTarget(ip) !== window.location.href) {
+      history.pushState(null, '', urlWithTarget(ip))
+      setTarget(ip)
+      setBadIp(null)
+    }
+    setDraft(ip)
+    setInputError(null)
+  }
+
+  const cancel = () => {
+    if (badIp !== null) {
+      // Drop the unusable lookup path or query so the page falls back to your own IP.
+      history.replaceState(null, '', urlWithTarget(''))
+      setBadIp(null)
+    }
+    setDraft(target)
+    setInputError(null)
+  }
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      cancel()
+    }
+  }
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    const ip = query.trim()
+    const ip = draft.trim()
     if (ip && !isValidIp(ip)) {
-      setInputError(`"${ip}" is not a valid IPv4 or IPv6 address`)
+      setInputError(invalidMessage(ip))
       return
     }
-    setInputError(null)
-    setTarget(ip)
+    if (badIp === null && ip === (target || info?.ip || '')) {
+      setInputError(null)
+      return
+    }
+    goTo(ip)
     window.scrollTo({ top: 0 })
   }
 
@@ -269,25 +365,55 @@ export default function App() {
   return (
     <main>
       <header className="hero">
-        {state.status === 'loading' && <h1 className="ip skeleton">000.000.000.000</h1>}
-        {state.status === 'error' && (
-          <>
-            <h1 className="ip">Lookup failed</h1>
-            <p className="isp">{state.message}</p>
-          </>
+        <div className="ip-line">
+          <h1 className={info?.ip.includes(':') ? 'ip ip-v6' : 'ip'}>
+            {badIp !== null ? (
+              'Lookup failed'
+            ) : state.status === 'loading' ? (
+              <span className="skeleton">000.000.000.000</span>
+            ) : info ? (
+              info.ip
+            ) : (
+              'Lookup failed'
+            )}
+          </h1>
+          {info && <CopyButton text={info.ip} label="Copy IP address" className="ip-action" iconOnly />}
+        </div>
+        {state.status === 'error' && <p className="isp">{state.message}</p>}
+        {info && <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>}
+        {badIp === null && state.status === 'loading' && <p className="isp">&nbsp;</p>}
+        <form className="lookup" onSubmit={onSubmit} onKeyDown={onKeyDown}>
+          <div className="lookup-field">
+            <input
+              className="ip-input"
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                setInputError(null)
+              }}
+              aria-label="IP address to look up"
+              aria-invalid={inputError !== null}
+              aria-describedby={inputError ? 'ip-error' : undefined}
+              placeholder="Look up an IP address"
+              inputMode="text"
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <button type="submit" className="lookup-submit">Look up</button>
+          </div>
+          {inputError && (
+            <p className="input-error" id="ip-error" role="alert">
+              {inputError}
+            </p>
+          )}
+        </form>
+        {(target || badIp !== null) && (
+          <button type="button" className="copy my-ip" onClick={() => goTo('')}>
+            My IP
+          </button>
         )}
-        {info && (
-          <>
-            <div className="ip-line">
-              <h1 className={info.ip.includes(':') ? 'ip ip-v6' : 'ip'}>
-                <BreakableIp ip={info.ip} />
-              </h1>
-              <CopyButton text={info.ip} label="Copy IP address" />
-            </div>
-            <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>
-          </>
-        )}
-        {state.status === 'loading' && <p className="isp">&nbsp;</p>}
       </header>
 
       <InfoTable sections={sections} />
@@ -299,40 +425,6 @@ export default function App() {
           idleText="Copy all as JSON"
           className="copy copy-json"
         />
-      )}
-
-      <form className="lookup" onSubmit={onSubmit}>
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setInputError(null)
-          }}
-          aria-invalid={inputError !== null}
-          placeholder="Look up another IP, e.g. 8.8.8.8"
-          aria-label="IP address to look up"
-          spellCheck={false}
-        />
-        <button type="submit">Look up</button>
-        {target && (
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              setQuery('')
-              setInputError(null)
-              setTarget('')
-              window.scrollTo({ top: 0 })
-            }}
-          >
-            My IP
-          </button>
-        )}
-      </form>
-      {inputError && (
-        <p className="input-error" role="alert">
-          {inputError}
-        </p>
       )}
 
       <footer>

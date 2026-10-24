@@ -201,7 +201,7 @@ const IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[
 
 export function isValidIp(value: string): boolean {
   if (IPV4.test(value)) return true
-  if (!value.includes(':')) return false
+  if (!value.includes(':') || !/^[\da-f:.]+$/i.test(value)) return false
   // The URL parser validates bracketed IPv6 literals for us.
   try {
     new URL(`http://[${value}]`)
@@ -217,7 +217,7 @@ export async function lookupIp(ip: string, signal: AbortSignal): Promise<IpInfo>
   let firstError: unknown
   for (const provider of providers) {
     try {
-      return await provider(ip, signal)
+      return await provider(ip, AbortSignal.any([signal, AbortSignal.timeout(5000)]))
     } catch (err) {
       if (signal.aborted) throw err
       firstError ??= err

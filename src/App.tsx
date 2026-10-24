@@ -339,6 +339,10 @@ export default function App() {
       setInputError(invalidMessage(ip))
       return
     }
+    if (badIp === null && ip === (target || info?.ip || '')) {
+      close()
+      return
+    }
     goTo(ip)
     window.scrollTo({ top: 0 })
   }

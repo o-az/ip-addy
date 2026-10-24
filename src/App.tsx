@@ -234,11 +234,8 @@ export default function App() {
   const [initial] = useState(readUrlTarget)
   const [target, setTarget] = useState(initial.target) // '' means "my own IP"
   const [badIp, setBadIp] = useState(initial.invalid) // invalid URL value, never fetched
-  const [editing, setEditing] = useState(initial.invalid !== null)
-  const [draft, setDraft] = useState(initial.invalid ?? '')
+  const [draft, setDraft] = useState(initial.invalid ?? initial.target)
   const inputRef = useRef<HTMLInputElement>(null)
-  const editRef = useRef<HTMLButtonElement>(null)
-  const restoreFocus = useRef(false)
   const [result, setResult] = useState<LookupResult | null>(null)
   // undefined = still resolving, null = not available on this network.
   const [v4, setV4] = useState<string | null | undefined>(undefined)
@@ -288,29 +285,12 @@ export default function App() {
       const next = readUrlTarget()
       setTarget(next.target)
       setBadIp(next.invalid)
-      setDraft(next.invalid ?? '')
+      setDraft(next.invalid ?? next.target)
       setInputError(next.invalid === null ? null : invalidMessage(next.invalid))
-      setEditing(next.invalid !== null)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
-
-  useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
-    } else if (restoreFocus.current) {
-      restoreFocus.current = false
-      editRef.current?.focus()
-    }
-  }, [editing])
-
-  const close = () => {
-    restoreFocus.current = true
-    setEditing(false)
-    setInputError(null)
-  }
 
   const goTo = (ip: string) => {
     if (urlWithTarget(ip) !== window.location.href) {
@@ -318,12 +298,8 @@ export default function App() {
       setTarget(ip)
       setBadIp(null)
     }
-    close()
-  }
-
-  const startEditing = () => {
-    setDraft(badIp ?? (info?.ip ?? target))
-    setEditing(true)
+    setDraft(ip)
+    setInputError(null)
   }
 
   const cancel = () => {
@@ -332,7 +308,9 @@ export default function App() {
       history.replaceState(null, '', urlWithTarget(''))
       setBadIp(null)
     }
-    close()
+    setDraft(target)
+    setInputError(null)
+    inputRef.current?.blur()
   }
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -344,14 +322,13 @@ export default function App() {
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (!editing) return
     const ip = draft.trim()
     if (ip && !isValidIp(ip)) {
       setInputError(invalidMessage(ip))
       return
     }
     if (badIp === null && ip === (target || info?.ip || '')) {
-      close()
+      setInputError(null)
       return
     }
     goTo(ip)
@@ -391,27 +368,10 @@ export default function App() {
   return (
     <main>
       <header className="hero">
-        <form className="ip-line" onSubmit={onSubmit} onKeyDown={onKeyDown}>
-          <h1 className={info?.ip.includes(':') || (editing && draft.includes(':')) ? 'ip ip-v6' : 'ip'}>
-            {editing ? (
-              <input
-                ref={inputRef}
-                className="ip-input"
-                value={draft}
-                onChange={(e) => {
-                  setDraft(e.target.value)
-                  setInputError(null)
-                }}
-                aria-label="IP address to look up"
-                aria-invalid={inputError !== null}
-                aria-describedby={inputError ? 'ip-error' : undefined}
-                placeholder="e.g. 8.8.8.8"
-                inputMode="text"
-                autoCapitalize="off"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-              />
+        <div className="ip-line">
+          <h1 className={info?.ip.includes(':') ? 'ip ip-v6' : 'ip'}>
+            {badIp !== null ? (
+              'Lookup failed'
             ) : state.status === 'loading' ? (
               <span className="skeleton">000.000.000.000</span>
             ) : info ? (
@@ -420,44 +380,39 @@ export default function App() {
               'Lookup failed'
             )}
           </h1>
-          <div className="ip-actions">
-            {editing ? (
-              <Fragment key="editing">
-                <button type="submit" className="copy primary">
-                  Look up
-                </button>
-                <button type="button" className="copy" onClick={cancel}>
-                  Cancel
-                </button>
-              </Fragment>
-            ) : (
-              <Fragment key="display">
-                <button
-                  ref={editRef}
-                  type="button"
-                  className="ip-action"
-                  onClick={startEditing}
-                  aria-label="Edit IP address"
-                  title="Edit IP address"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m16 3 5 5-12 12-6 1 1-6Z" />
-                    <path d="m14 5 5 5" />
-                  </svg>
-                </button>
-                {info && <CopyButton text={info.ip} label="Copy IP address" className="ip-action" iconOnly />}
-              </Fragment>
-            )}
+          {info && <CopyButton text={info.ip} label="Copy IP address" className="ip-action" iconOnly />}
+        </div>
+        {state.status === 'error' && <p className="isp">{state.message}</p>}
+        {info && <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>}
+        {badIp === null && state.status === 'loading' && <p className="isp">&nbsp;</p>}
+        <form className="lookup" onSubmit={onSubmit} onKeyDown={onKeyDown}>
+          <div className="lookup-field">
+            <input
+              ref={inputRef}
+              className="ip-input"
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                setInputError(null)
+              }}
+              aria-label="IP address to look up"
+              aria-invalid={inputError !== null}
+              aria-describedby={inputError ? 'ip-error' : undefined}
+              placeholder="Look up an IP address"
+              inputMode="text"
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <button type="submit" className="lookup-submit">Look up</button>
           </div>
+          {inputError && (
+            <p className="input-error" id="ip-error" role="alert">
+              {inputError}
+            </p>
+          )}
         </form>
-        {inputError && (
-          <p className="input-error" id="ip-error" role="alert">
-            {inputError}
-          </p>
-        )}
-        {!editing && state.status === 'error' && <p className="isp">{state.message}</p>}
-        {!editing && info && <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>}
-        {!editing && state.status === 'loading' && <p className="isp">&nbsp;</p>}
         {(target || badIp !== null) && (
           <button type="button" className="copy my-ip" onClick={() => goTo('')}>
             My IP

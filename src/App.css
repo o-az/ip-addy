@@ -36,13 +36,6 @@ main {
   scrollbar-width: thin;
 }
 
-.ip-actions {
-  display: flex;
-  flex: none;
-  gap: 4px;
-  align-items: center;
-}
-
 .ip-action {
   position: relative;
   display: inline-grid;
@@ -200,37 +193,70 @@ main {
   font: 13px/1.6 var(--mono);
 }
 
-/* Inline IP editor */
+/* A quiet lookup control, separate from the IP headline. */
 
-.ip-input {
-  display: block;
-  width: 100%;
-  padding: 0 8px;
-  font: inherit;
-  letter-spacing: inherit;
-  text-align: center;
-  background: var(--bg);
+.lookup {
+  max-width: 400px;
+  margin: 24px auto 0;
+  text-align: left;
+}
+
+.lookup-field {
+  display: flex;
+  align-items: stretch;
   border: 1px solid var(--line);
   border-radius: 6px;
+  background: var(--bg);
+}
+
+.lookup-field:focus-within {
+  border-color: var(--fg);
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.lookup-field:has([aria-invalid='true']) {
+  border-color: var(--fg);
+}
+
+.ip-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: 16px/1.5 var(--mono);
+  background: transparent;
+  border: 0;
+  border-radius: 5px 0 0 5px;
   outline: none;
 }
 
-.ip-input:focus {
-  border-color: var(--fg);
+.ip-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+  font-size: 13px;
 }
 
-.ip-input[aria-invalid='true'] {
-  border-color: var(--fg);
-  border-width: 2px;
-}
-
-.ip-line:has(.ip-input) .ip {
-  flex: 1 1 260px;
-}
-
-.copy.primary {
+.lookup-submit {
+  flex: none;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--bg);
   background: var(--fg);
+  border: 0;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+}
+
+.lookup-submit:hover {
+  background: color-mix(in srgb, var(--fg) 80%, var(--bg));
+}
+
+.lookup-submit:focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: -4px;
 }
 
 .my-ip {
@@ -240,6 +266,7 @@ main {
 .input-error {
   margin: 8px 0 0;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .copy:focus-visible {
@@ -266,10 +293,6 @@ footer {
     font-size: 24px;
   }
 
-  .ip-line:has(.ip-input) .ip {
-    flex: none;
-    width: 100%;
-  }
 }
 
 @media (max-width: 520px), (pointer: coarse) {
@@ -279,14 +302,9 @@ footer {
     align-items: center;
   }
 
-  .ip-input {
-    min-height: 44px;
-  }
-
   /* A quiet 32px visual control with a non-overlapping 44px touch target. */
-  .ip-actions {
-    gap: 12px;
-    padding: 6px;
+  .ip-action {
+    margin: 6px;
   }
 
   .ip-action::after {

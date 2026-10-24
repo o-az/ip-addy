@@ -1,4 +1,4 @@
-import { isValidIp, lookupIp } from '../src/lib/ip.js'
+import { isValidIp, lookupIp } from '../src/lib/ip.ts'
 
 export function isJsonPath(pathname: string): boolean {
   return /^\/(?:json|[^/]*\.json)\/?$/.test(pathname)

@@ -1,4 +1,4 @@
-import { jsonResponse } from '../server/json.js'
+import { jsonResponse } from '../server/json.ts'
 
 export default {
   fetch(request: Request) {

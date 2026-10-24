@@ -1,10 +1,62 @@
 {
   "compilerOptions": {
-    "rewriteRelativeImportExtensions": true
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "lib": [
+      "DOM",
+      "ESNext",
+      "DOM.Iterable"
+    ],
+    "target": "ESNext",
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "Bundler",
+    "useDefineForClassFields": true,
+    "allowArbitraryExtensions": true,
+    "noUncheckedIndexedAccess": true,
+    "resolvePackageJsonImports": true,
+    "resolvePackageJsonExports": true,
+    "useUnknownInCatchVariables": true,
+    "allowImportingTsExtensions": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "bun",
+      "node",
+      "vite/client"
+    ],
+    "rewriteRelativeImportExtensions": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force"
   },
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "include": [
+    "src/**/*",
+    "api/**/*",
+    "server/**/*"
+  ],
+  "files": [
+    "env.d.ts",
+    "reset.d.ts",
+    "oxfmt.config.ts",
+    "oxlint.config.ts",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "_",
+    "dist",
+    "node_modules"
+  ],
+  "$schema": "https://json.schemastore.org/tsconfig.json"
 }

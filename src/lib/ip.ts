@@ -109,16 +109,16 @@ async function fromIpWhoIs(ip: string, signal: AbortSignal): Promise<IpInfo> {
       id: orNull(data.timezone?.id),
       abbr: orNull(data.timezone?.abbr),
       utc: orNull(data.timezone?.utc),
-      isDst: orNull(data.timezone?.is_dst),
+      isDst: orNull(data.timezone?.is_dst)
     },
     connection: {
       asn: orNull(data.connection?.asn),
       org: orNull(data.connection?.org),
       isp: orNull(data.connection?.isp),
       domain: orNull(data.connection?.domain),
-      hostname: null,
+      hostname: null
     },
-    source: 'ipwho.is',
+    source: 'ipwho.is'
   }
 }
 
@@ -128,9 +128,7 @@ async function fromIpApiCo(ip: string, signal: AbortSignal): Promise<IpInfo> {
   const data = (await res.json()) as IpApiCoResponse
   if (data.error) throw new Error(data.reason ?? 'ipapi.co lookup failed')
   const asn = data.asn ? Number(data.asn.replace(/^AS/i, '')) : NaN
-  const utc = data.utc_offset
-    ? `${data.utc_offset.slice(0, 3)}:${data.utc_offset.slice(3)}`
-    : null
+  const utc = data.utc_offset ? `${data.utc_offset.slice(0, 3)}:${data.utc_offset.slice(3)}` : null
   return {
     ip: data.ip,
     type: orNull(data.version),
@@ -151,9 +149,9 @@ async function fromIpApiCo(ip: string, signal: AbortSignal): Promise<IpInfo> {
       org: orNull(data.org),
       isp: orNull(data.org),
       domain: null,
-      hostname: null,
+      hostname: null
     },
-    source: 'ipapi.co',
+    source: 'ipapi.co'
   }
 }
 
@@ -165,7 +163,12 @@ async function fromIpInfoIo(ip: string, signal: AbortSignal): Promise<IpInfo> {
   // org looks like "AS15169 Google LLC".
   const orgMatch = data.org?.match(/^AS(\d+)\s+(.*)$/)
   const [lat, lon] = (data.loc ?? '').split(',').map(Number)
-  const hasLoc = data.loc !== undefined && !Number.isNaN(lat) && !Number.isNaN(lon)
+  const hasLoc =
+    data.loc !== undefined &&
+    lat !== undefined &&
+    lon !== undefined &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lon)
   const countryName = data.country
     ? (new Intl.DisplayNames(['en'], { type: 'region' }).of(data.country) ?? data.country)
     : null
@@ -186,12 +189,12 @@ async function fromIpInfoIo(ip: string, signal: AbortSignal): Promise<IpInfo> {
     timezone: { id: orNull(data.timezone), abbr: null, utc: null, isDst: null },
     connection: {
       asn: orgMatch ? Number(orgMatch[1]) : null,
-      org: orgMatch ? orgMatch[2] : orNull(data.org),
-      isp: orgMatch ? orgMatch[2] : orNull(data.org),
+      org: orNull(orgMatch?.[2] ?? data.org),
+      isp: orNull(orgMatch?.[2] ?? data.org),
       domain: null,
-      hostname: orNull(data.hostname),
+      hostname: orNull(data.hostname)
     },
-    source: 'ipinfo.io',
+    source: 'ipinfo.io'
   }
 }
 
@@ -229,12 +232,12 @@ export async function lookupIp(ip: string, signal: AbortSignal): Promise<IpInfo>
 /** Resolve the caller's address over a specific IP family; null when unavailable. */
 export async function fetchAddress(
   family: 'v4' | 'v6',
-  signal: AbortSignal,
+  signal: AbortSignal
 ): Promise<string | null> {
   const host = family === 'v4' ? 'api.ipify.org' : 'api6.ipify.org'
   try {
     const res = await fetch(`https://${host}?format=json`, {
-      signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(5000)])
     })
     const data = (await res.json()) as { ip?: string }
     return data.ip ?? null

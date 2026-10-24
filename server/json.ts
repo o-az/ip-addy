@@ -1,15 +1,14 @@
 import { isValidIp, lookupIp } from '../src/lib/ip.ts'
 
 export function isJsonPath(pathname: string): boolean {
-  return /^\/(?:json|[^/]*\.json)\/?$/.test(pathname)
-    || /^\/api\/[^/]+\/?$/.test(pathname)
+  return /^\/(?:json|[^/]*\.json)\/?$/.test(pathname) || /^\/api\/[^/]+\/?$/.test(pathname)
 }
 
 /** Works with either the original public URL or Vercel's rewritten /api/<ip>. */
 export async function jsonResponse(request: Request, clientIp?: string): Promise<Response> {
   const headers = new Headers({
     'Cache-Control': 'private, no-store',
-    'X-Content-Type-Options': 'nosniff',
+    'X-Content-Type-Options': 'nosniff'
   })
   const error = (message: string, status: number) =>
     Response.json({ error: message }, { status, headers })
@@ -22,7 +21,9 @@ export async function jsonResponse(request: Request, clientIp?: string): Promise
   let address: string
   try {
     address = decodeURIComponent(new URL(request.url).pathname)
-      .replace(/^\/api\//, '/').replace(/\/$/, '').slice(1)
+      .replace(/^\/api\//, '/')
+      .replace(/\/$/, '')
+      .slice(1)
   } catch {
     return error('Invalid IPv4 or IPv6 address', 400)
   }
@@ -38,7 +39,7 @@ export async function jsonResponse(request: Request, clientIp?: string): Promise
     const signal = AbortSignal.any([request.signal, AbortSignal.timeout(15000)])
     const info = await lookupIp(ip, signal)
     return new Response(request.method === 'HEAD' ? null : JSON.stringify(info), {
-      headers: { ...Object.fromEntries(headers), 'Content-Type': 'application/json; charset=utf-8' },
+      headers: { ...Object.fromEntries(headers), 'Content-Type': 'application/json; charset=utf-8' }
     })
   } catch {
     return error('IP lookup failed. Please try again later.', 502)

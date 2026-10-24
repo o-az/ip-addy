@@ -64,11 +64,13 @@ function CopyButton({
   label,
   idleText = 'Copy',
   className = 'copy',
+  iconOnly = false,
 }: {
   text: string
   label: string
   idleText?: string
   className?: string
+  iconOnly?: boolean
 }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
@@ -89,13 +91,29 @@ function CopyButton({
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
-  // Both labels occupy the same grid cell, so the button width never changes.
+  // Text labels share a grid cell; icon feedback keeps the same dimensions.
   return (
-    <button type="button" className={className} onClick={copy} aria-label={label}>
-      <span className={copied ? 'hidden' : undefined}>{idleText}</span>
-      <span className={copied ? undefined : 'hidden'} aria-live="polite">
-        Copied
-      </span>
+    <button type="button" className={className} onClick={copy} aria-label={label} title={label}>
+      {iconOnly ? (
+        <>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {copied ? <path d="m5 12 4 4L19 6" /> : (
+              <>
+                <rect x="8" y="8" width="12" height="12" rx="2" />
+                <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+              </>
+            )}
+          </svg>
+          <span className="sr-only" role="status">{copied ? 'Copied' : ''}</span>
+        </>
+      ) : (
+        <>
+          <span className={copied ? 'hidden' : undefined}>{idleText}</span>
+          <span className={copied ? undefined : 'hidden'} aria-live="polite">
+            Copied
+          </span>
+        </>
+      )}
     </button>
   )
 }
@@ -415,14 +433,17 @@ export default function App() {
                 <button
                   ref={editRef}
                   type="button"
-                  className="copy"
+                  className="ip-action"
                   onClick={startEditing}
                   aria-label="Edit IP address"
-                  title="Look up another IP"
+                  title="Edit IP address"
                 >
-                  Edit
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m16 3 5 5-12 12-6 1 1-6Z" />
+                    <path d="m14 5 5 5" />
+                  </svg>
                 </button>
-                {info && <CopyButton text={info.ip} label="Copy IP address" />}
+                {info && <CopyButton text={info.ip} label="Copy IP address" className="ip-action" iconOnly />}
               </Fragment>
             )}
           </div>

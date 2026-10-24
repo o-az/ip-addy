@@ -34,23 +34,21 @@ function gpuRenderer(): string | null {
 
 function browserName(): string {
   const nav = navigator as Navigator & NavigatorExtras
-  const brands = nav.userAgentData?.brands?.filter(
-    (b) => !/not.?a.?brand/i.test(b.brand),
-  )
+  const brands = nav.userAgentData?.brands?.filter(b => !/not.?a.?brand/i.test(b.brand))
   if (brands?.length) {
-    const preferred = brands.find((b) => b.brand !== 'Chromium') ?? brands[0]
-    return `${preferred.brand} ${preferred.version}`
+    const preferred = brands.find(b => b.brand !== 'Chromium') ?? brands[0]
+    if (preferred) return `${preferred.brand} ${preferred.version}`
   }
   const ua = navigator.userAgent
-  const match =
-    ua.match(/(Edg|OPR|Firefox|Chrome|Version)\/([\d.]+)/) ?? null
-  if (!match) return 'Unknown'
+  const match = ua.match(/(Edg|OPR|Firefox|Chrome|Version)\/([\d.]+)/) ?? null
+  const [, name, version] = match ?? []
+  if (!name || !version) return 'Unknown'
   const names: Record<string, string> = {
     Edg: 'Edge',
     OPR: 'Opera',
-    Version: 'Safari',
+    Version: 'Safari'
   }
-  return `${names[match[1]] ?? match[1]} ${match[2].split('.')[0]}`
+  return `${names[name] ?? name} ${version.split('.')[0]}`
 }
 
 const yesNo = (v: boolean) => (v ? 'Yes' : 'No')
@@ -60,14 +58,19 @@ export function deviceRows(): Row[] {
   const rows: (Row | null)[] = [
     ['Browser', browserName()],
     ['Platform', nav.userAgentData?.platform || navigator.platform || 'Unknown'],
-    ['Mobile', nav.userAgentData ? yesNo(!!nav.userAgentData.mobile) : yesNo(navigator.maxTouchPoints > 0 && /Mobi/.test(navigator.userAgent))],
+    [
+      'Mobile',
+      nav.userAgentData
+        ? yesNo(!!nav.userAgentData.mobile)
+        : yesNo(navigator.maxTouchPoints > 0 && /Mobi/.test(navigator.userAgent))
+    ],
     ['CPU cores', String(navigator.hardwareConcurrency ?? 'Unknown')],
     nav.deviceMemory ? ['Memory', `≥ ${nav.deviceMemory} GB`] : null,
     ['GPU', gpuRenderer() ?? 'Unknown'],
     ['Screen', `${screen.width} × ${screen.height} @ ${window.devicePixelRatio}x`],
     ['Viewport', `${window.innerWidth} × ${window.innerHeight}`],
     ['Color depth', `${screen.colorDepth}-bit`],
-    ['Touch points', String(navigator.maxTouchPoints)],
+    ['Touch points', String(navigator.maxTouchPoints)]
   ]
   return rows.filter((r): r is Row => r !== null)
 }
@@ -88,7 +91,7 @@ export function browserRows(): Row[] {
     conn?.downlink !== undefined ? ['Downlink', `~${conn.downlink} Mbps`] : null,
     conn?.rtt !== undefined ? ['Round trip', `~${conn.rtt} ms`] : null,
     conn?.saveData !== undefined ? ['Data saver', yesNo(conn.saveData)] : null,
-    ['Referrer', document.referrer || 'None'],
+    ['Referrer', document.referrer || 'None']
   ]
   return rows.filter((r): r is Row => r !== null)
 }

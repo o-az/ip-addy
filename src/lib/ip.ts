@@ -217,7 +217,7 @@ export async function lookupIp(ip: string, signal: AbortSignal): Promise<IpInfo>
   let firstError: unknown
   for (const provider of providers) {
     try {
-      return await provider(ip, signal)
+      return await provider(ip, AbortSignal.any([signal, AbortSignal.timeout(5000)]))
     } catch (err) {
       if (signal.aborted) throw err
       firstError ??= err

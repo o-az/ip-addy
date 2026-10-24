@@ -2,7 +2,7 @@
 
 Shows your public IP address and everything that can be derived from it or from your browser:
 
-- **IP**: public IPv4 (with copy button) and ISP up top, IPv6 in the table, lookup of any other IP
+- **IP**: public IPv4 (with copy button) and ISP up top, IPv6 in the table, inline lookup of any IPv4 or IPv6 address
 - **Location**: city, region, postal code, country + flag, continent, capital, EU membership, calling code, coordinates, map (OpenStreetMap)
 - **Network**: ISP, organization, ASN, domain, reverse hostname (when available)
 - **Time**: IP time zone, UTC offset, DST, live local time there vs. yours
@@ -10,3 +10,5 @@ Shows your public IP address and everything that can be derived from it or from 
 - **Copy all as JSON**: every field above in one JSON blob
 
 IP data comes from free public APIs, tried in order until one succeeds: [ipwho.is](https://ipwho.is), [ipapi.co](https://ipapi.co), [ipinfo.io](https://ipinfo.io). IPv4/IPv6 detection uses [ipify](https://www.ipify.org). No API keys or backend required.
+
+Use the pencil beside the IP address to look up another address. Press Enter to look up, or Escape to cancel. “My IP” returns to your own address. Lookups are saved in the URL as `?ip=8.8.8.8` (IPv6 works too), so you can bookmark or share them; browser Back and Forward restore previous lookups.

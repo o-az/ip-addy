@@ -144,51 +144,56 @@ main {
   font: 13px/1.6 var(--mono);
 }
 
-/* Lookup form */
+/* Inline IP editor */
 
-.lookup {
-  display: flex;
-  gap: 8px;
-  margin-top: 40px;
-}
-
-.lookup input {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 12px;
+.ip-input {
+  display: block;
+  width: 100%;
+  padding: 0 8px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: center;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 6px;
   outline: none;
 }
 
-.lookup input:focus {
+.ip-input:focus {
   border-color: var(--fg);
 }
 
-.lookup input[aria-invalid='true'] {
+.ip-input[aria-invalid='true'] {
   border-color: var(--fg);
   border-width: 2px;
 }
 
-.lookup button {
-  padding: 10px 16px;
-  font-weight: 600;
-  color: var(--bg);
-  background: var(--fg);
-  border: 1px solid var(--fg);
-  border-radius: 6px;
-  cursor: pointer;
+.ip-line:has(.ip-input) .ip {
+  flex: 1;
 }
 
-.lookup button.secondary {
-  color: var(--fg);
-  background: transparent;
+.icon-btn {
+  padding: 6px 8px;
+  line-height: 0;
+}
+
+.copy.primary {
+  color: var(--bg);
+  background: var(--fg);
+}
+
+.my-ip {
+  margin-top: 16px;
 }
 
 .input-error {
   margin: 8px 0 0;
   font-size: 13px;
+}
+
+.copy:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
 }
 
 footer {
@@ -202,15 +207,11 @@ footer {
     padding-top: 40px;
   }
 
-  .lookup {
+  .ip-line:has(.ip-input) {
     flex-wrap: wrap;
   }
 
-  .lookup input {
+  .ip-line:has(.ip-input) .ip {
     flex-basis: 100%;
-  }
-
-  .lookup button {
-    flex: 1;
   }
 }

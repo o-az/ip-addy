@@ -1,4 +1,12 @@
-import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { browserRows, deviceRows } from './lib/client'
 import { fetchAddress, isValidIp, lookupIp, type IpInfo } from './lib/ip'
 import './App.css'
@@ -8,6 +16,34 @@ type LookupResult =
   | { target: string; status: 'ready'; info: IpInfo }
 
 type LookupState = LookupResult | { status: 'loading' }
+
+type UrlTarget = { target: string; invalid: string | null }
+
+const invalidMessage = (ip: string) => `"${ip}" is not a valid IPv4 or IPv6 address`
+
+/** Reads the lookup target from ?ip=. An invalid value is reported, never fetched. */
+function readUrlTarget(): UrlTarget {
+  const raw = new URLSearchParams(window.location.search).get('ip')?.trim() ?? ''
+  if (raw && !isValidIp(raw)) return { target: '', invalid: raw }
+  return { target: raw, invalid: null }
+}
+
+/** Builds the current URL with ?ip= set or removed; other params and hash are kept. */
+function urlWithTarget(ip: string): string {
+  const url = new URL(window.location.href)
+  if (ip) url.searchParams.set('ip', ip)
+  else url.searchParams.delete('ip')
+  return url.toString()
+}
+
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  )
+}
 
 type TableRow = [label: string, value: ReactNode]
 type Section = { title: string; rows: TableRow[]; footer?: ReactNode }
@@ -178,20 +214,26 @@ function InfoTable({ sections }: { sections: Section[] }) {
 }
 
 export default function App() {
-  const [query, setQuery] = useState('')
-  const [target, setTarget] = useState('') // '' means "my own IP"
+  const [initial] = useState(readUrlTarget)
+  const [target, setTarget] = useState(initial.target) // '' means "my own IP"
+  const [badIp, setBadIp] = useState(initial.invalid) // invalid ?ip= value, never fetched
+  const [editing, setEditing] = useState(initial.invalid !== null)
+  const [draft, setDraft] = useState(initial.invalid ?? '')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const editRef = useRef<HTMLButtonElement>(null)
+  const restoreFocus = useRef(false)
   const [result, setResult] = useState<LookupResult | null>(null)
   // undefined = still resolving, null = not available on this network.
   const [v4, setV4] = useState<string | null | undefined>(undefined)
   const [v6, setV6] = useState<string | null | undefined>(undefined)
-  const [inputError, setInputError] = useState<string | null>(null)
+  const [inputError, setInputError] = useState<string | null>(initial.invalid === null ? null : invalidMessage(initial.invalid))
 
   const [device] = useState(deviceRows)
   const [browser] = useState(browserRows)
 
   // For "my IP", look up the IPv4 address so the details match the headline; fall
   // back to whatever address the provider sees when there is no IPv4. null = wait.
-  const lookupKey = target || (v4 === undefined ? null : (v4 ?? ''))
+  const lookupKey = badIp !== null ? null : target || (v4 === undefined ? null : (v4 ?? ''))
 
   // A result for a previous key means the current lookup is still in flight.
   const state: LookupState =
@@ -224,15 +266,74 @@ export default function App() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const onPop = () => {
+      const next = readUrlTarget()
+      setTarget(next.target)
+      setBadIp(next.invalid)
+      setDraft(next.invalid ?? '')
+      setInputError(next.invalid === null ? null : invalidMessage(next.invalid))
+      setEditing(next.invalid !== null)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    } else if (restoreFocus.current) {
+      restoreFocus.current = false
+      editRef.current?.focus()
+    }
+  }, [editing])
+
+  const close = () => {
+    restoreFocus.current = true
+    setEditing(false)
+    setInputError(null)
+  }
+
+  const goTo = (ip: string) => {
+    if (ip !== target || badIp !== null) {
+      history.pushState(null, '', urlWithTarget(ip))
+      setTarget(ip)
+      setBadIp(null)
+    }
+    close()
+  }
+
+  const startEditing = () => {
+    setDraft(badIp ?? (info?.ip ?? target))
+    setEditing(true)
+  }
+
+  const cancel = () => {
+    if (badIp !== null) {
+      // Drop the unusable ?ip= value so the page falls back to your own IP.
+      history.replaceState(null, '', urlWithTarget(''))
+      setBadIp(null)
+    }
+    close()
+  }
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      cancel()
+    }
+  }
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    const ip = query.trim()
+    if (!editing) return
+    const ip = draft.trim()
     if (ip && !isValidIp(ip)) {
-      setInputError(`"${ip}" is not a valid IPv4 or IPv6 address`)
+      setInputError(invalidMessage(ip))
       return
     }
-    setInputError(null)
-    setTarget(ip)
+    goTo(ip)
     window.scrollTo({ top: 0 })
   }
 
@@ -269,25 +370,73 @@ export default function App() {
   return (
     <main>
       <header className="hero">
-        {state.status === 'loading' && <h1 className="ip skeleton">000.000.000.000</h1>}
-        {state.status === 'error' && (
-          <>
-            <h1 className="ip">Lookup failed</h1>
-            <p className="isp">{state.message}</p>
-          </>
+        <form className="ip-line" onSubmit={onSubmit} onKeyDown={onKeyDown}>
+          <h1 className={info?.ip.includes(':') || (editing && draft.includes(':')) ? 'ip ip-v6' : 'ip'}>
+            {editing ? (
+              <input
+                ref={inputRef}
+                className="ip-input"
+                value={draft}
+                onChange={(e) => {
+                  setDraft(e.target.value)
+                  setInputError(null)
+                }}
+                aria-label="IP address to look up"
+                aria-invalid={inputError !== null}
+                aria-describedby={inputError ? 'ip-error' : undefined}
+                placeholder="e.g. 8.8.8.8"
+                inputMode="text"
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            ) : state.status === 'loading' ? (
+              <span className="skeleton">000.000.000.000</span>
+            ) : info ? (
+              <BreakableIp ip={info.ip} />
+            ) : (
+              'Lookup failed'
+            )}
+          </h1>
+          {editing ? (
+            <>
+              <button type="submit" className="copy primary">
+                Look up
+              </button>
+              <button type="button" className="copy" onClick={cancel}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                ref={editRef}
+                type="button"
+                className="copy icon-btn"
+                onClick={startEditing}
+                aria-label="Edit IP address"
+                title="Look up another IP"
+              >
+                <PencilIcon />
+              </button>
+              {info && <CopyButton text={info.ip} label="Copy IP address" />}
+            </>
+          )}
+        </form>
+        {inputError && (
+          <p className="input-error" id="ip-error" role="alert">
+            {inputError}
+          </p>
         )}
-        {info && (
-          <>
-            <div className="ip-line">
-              <h1 className={info.ip.includes(':') ? 'ip ip-v6' : 'ip'}>
-                <BreakableIp ip={info.ip} />
-              </h1>
-              <CopyButton text={info.ip} label="Copy IP address" />
-            </div>
-            <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>
-          </>
+        {!editing && state.status === 'error' && <p className="isp">{state.message}</p>}
+        {!editing && info && <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>}
+        {!editing && state.status === 'loading' && <p className="isp">&nbsp;</p>}
+        {(target || badIp !== null) && (
+          <button type="button" className="copy my-ip" onClick={() => goTo('')}>
+            My IP
+          </button>
         )}
-        {state.status === 'loading' && <p className="isp">&nbsp;</p>}
       </header>
 
       <InfoTable sections={sections} />
@@ -299,40 +448,6 @@ export default function App() {
           idleText="Copy all as JSON"
           className="copy copy-json"
         />
-      )}
-
-      <form className="lookup" onSubmit={onSubmit}>
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setInputError(null)
-          }}
-          aria-invalid={inputError !== null}
-          placeholder="Look up another IP, e.g. 8.8.8.8"
-          aria-label="IP address to look up"
-          spellCheck={false}
-        />
-        <button type="submit">Look up</button>
-        {target && (
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              setQuery('')
-              setInputError(null)
-              setTarget('')
-              window.scrollTo({ top: 0 })
-            }}
-          >
-            My IP
-          </button>
-        )}
-      </form>
-      {inputError && (
-        <p className="input-error" role="alert">
-          {inputError}
-        </p>
       )}
 
       <footer>

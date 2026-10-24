@@ -21,18 +21,24 @@ type UrlTarget = { target: string; invalid: string | null }
 
 const invalidMessage = (ip: string) => `"${ip}" is not a valid IPv4 or IPv6 address`
 
-/** Reads the lookup target from ?ip=. An invalid value is reported, never fetched. */
+/** Path lookups take precedence over legacy ?ip= links. Never fetch invalid input. */
 function readUrlTarget(): UrlTarget {
-  const raw = new URLSearchParams(window.location.search).get('ip')?.trim() ?? ''
+  let path: string
+  try {
+    path = decodeURIComponent(window.location.pathname.slice(1).replace(/\/$/, ''))
+  } catch {
+    return { target: '', invalid: window.location.pathname.slice(1) }
+  }
+  const raw = path || new URLSearchParams(window.location.search).get('ip')?.trim() || ''
   if (raw && !isValidIp(raw)) return { target: '', invalid: raw }
   return { target: raw, invalid: null }
 }
 
-/** Builds the current URL with ?ip= set or removed; other params and hash are kept. */
+/** New lookups use paths; unrelated query parameters and the hash are kept. */
 function urlWithTarget(ip: string): string {
   const url = new URL(window.location.href)
-  if (ip) url.searchParams.set('ip', ip)
-  else url.searchParams.delete('ip')
+  url.pathname = ip ? `/${ip}` : '/'
+  url.searchParams.delete('ip')
   return url.toString()
 }
 
@@ -216,7 +222,7 @@ function InfoTable({ sections }: { sections: Section[] }) {
 export default function App() {
   const [initial] = useState(readUrlTarget)
   const [target, setTarget] = useState(initial.target) // '' means "my own IP"
-  const [badIp, setBadIp] = useState(initial.invalid) // invalid ?ip= value, never fetched
+  const [badIp, setBadIp] = useState(initial.invalid) // invalid URL value, never fetched
   const [editing, setEditing] = useState(initial.invalid !== null)
   const [draft, setDraft] = useState(initial.invalid ?? '')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -296,7 +302,7 @@ export default function App() {
   }
 
   const goTo = (ip: string) => {
-    if (ip !== target || badIp !== null) {
+    if (urlWithTarget(ip) !== window.location.href) {
       history.pushState(null, '', urlWithTarget(ip))
       setTarget(ip)
       setBadIp(null)
@@ -311,7 +317,7 @@ export default function App() {
 
   const cancel = () => {
     if (badIp !== null) {
-      // Drop the unusable ?ip= value so the page falls back to your own IP.
+      // Drop the unusable lookup path or query so the page falls back to your own IP.
       history.replaceState(null, '', urlWithTarget(''))
       setBadIp(null)
     }

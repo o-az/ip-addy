@@ -400,16 +400,16 @@ export default function App() {
             )}
           </h1>
           {editing ? (
-            <>
+            <Fragment key="editing">
               <button type="submit" className="copy primary">
                 Look up
               </button>
               <button type="button" className="copy" onClick={cancel}>
                 Cancel
               </button>
-            </>
+            </Fragment>
           ) : (
-            <>
+            <Fragment key="display">
               <button
                 ref={editRef}
                 type="button"
@@ -421,7 +421,7 @@ export default function App() {
                 <PencilIcon />
               </button>
               {info && <CopyButton text={info.ip} label="Copy IP address" />}
-            </>
+            </Fragment>
           )}
         </form>
         {inputError && (

@@ -13,21 +13,34 @@ main {
 
 .ip-line {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 12px 16px;
 }
 
 .ip {
+  flex-shrink: 0;
+  max-width: 100%;
   min-width: 0;
-  font: 700 clamp(32px, 8vw, 56px) / 1.15 var(--mono);
+  font: 700 clamp(28px, 8vw, 56px) / 1.15 var(--mono);
   letter-spacing: -0.03em;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
-/* IPv6 addresses are long; keep them to a line or two. */
+/* IPv6 addresses may wrap, but only at the group boundaries in BreakableIp. */
 .ip-v6 {
   font-size: clamp(20px, 4.5vw, 34px);
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.ip-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
 }
 
 .skeleton {
@@ -99,7 +112,7 @@ main {
 .info td {
   padding: 9px 0;
   vertical-align: top;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
 }
 
 .info td:first-child {
@@ -169,12 +182,7 @@ main {
 }
 
 .ip-line:has(.ip-input) .ip {
-  flex: 1;
-}
-
-.icon-btn {
-  padding: 6px 8px;
-  line-height: 0;
+  flex: 1 1 260px;
 }
 
 .copy.primary {
@@ -207,11 +215,24 @@ footer {
     padding-top: 40px;
   }
 
-  .ip-line:has(.ip-input) {
-    flex-wrap: wrap;
+  .ip-line {
+    flex-direction: column;
   }
 
   .ip-line:has(.ip-input) .ip {
-    flex-basis: 100%;
+    flex: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px), (pointer: coarse) {
+  .copy {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .ip-input {
+    min-height: 44px;
   }
 }

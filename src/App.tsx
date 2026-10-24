@@ -42,15 +42,6 @@ function urlWithTarget(ip: string): string {
   return url.toString()
 }
 
-function PencilIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  )
-}
-
 type TableRow = [label: string, value: ReactNode]
 type Section = { title: string; rows: TableRow[]; footer?: ReactNode }
 
@@ -409,30 +400,32 @@ export default function App() {
               'Lookup failed'
             )}
           </h1>
-          {editing ? (
-            <Fragment key="editing">
-              <button type="submit" className="copy primary">
-                Look up
-              </button>
-              <button type="button" className="copy" onClick={cancel}>
-                Cancel
-              </button>
-            </Fragment>
-          ) : (
-            <Fragment key="display">
-              <button
-                ref={editRef}
-                type="button"
-                className="copy icon-btn"
-                onClick={startEditing}
-                aria-label="Edit IP address"
-                title="Look up another IP"
-              >
-                <PencilIcon />
-              </button>
-              {info && <CopyButton text={info.ip} label="Copy IP address" />}
-            </Fragment>
-          )}
+          <div className="ip-actions">
+            {editing ? (
+              <Fragment key="editing">
+                <button type="submit" className="copy primary">
+                  Look up
+                </button>
+                <button type="button" className="copy" onClick={cancel}>
+                  Cancel
+                </button>
+              </Fragment>
+            ) : (
+              <Fragment key="display">
+                <button
+                  ref={editRef}
+                  type="button"
+                  className="copy"
+                  onClick={startEditing}
+                  aria-label="Edit IP address"
+                  title="Look up another IP"
+                >
+                  Edit
+                </button>
+                {info && <CopyButton text={info.ip} label="Copy IP address" />}
+              </Fragment>
+            )}
+          </div>
         </form>
         {inputError && (
           <p className="input-error" id="ip-error" role="alert">

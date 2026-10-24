@@ -93,28 +93,30 @@ function CopyButton({
   }
   // Text labels share a grid cell; icon feedback keeps the same dimensions.
   return (
-    <button type="button" className={className} onClick={copy} aria-label={label} title={label}>
-      {iconOnly ? (
-        <>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            {copied ? <path d="m5 12 4 4L19 6" /> : (
-              <>
-                <rect x="8" y="8" width="12" height="12" rx="2" />
-                <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
-              </>
-            )}
-          </svg>
-          <span className="sr-only" role="status">{copied ? 'Copied' : ''}</span>
-        </>
-      ) : (
-        <>
-          <span className={copied ? 'hidden' : undefined}>{idleText}</span>
-          <span className={copied ? undefined : 'hidden'} aria-live="polite">
-            Copied
-          </span>
-        </>
-      )}
-    </button>
+    <>
+      <button type="button" className={className} onClick={copy} aria-label={label} title={label}>
+        {iconOnly ? (
+          <>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {copied ? <path d="m5 12 4 4L19 6" /> : (
+                <>
+                  <rect x="8" y="8" width="12" height="12" rx="2" />
+                  <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+                </>
+              )}
+            </svg>
+          </>
+        ) : (
+          <>
+            <span className={copied ? 'hidden' : undefined}>{idleText}</span>
+            <span className={copied ? undefined : 'hidden'} aria-live="polite">
+              Copied
+            </span>
+          </>
+        )}
+      </button>
+      {iconOnly && <span className="sr-only" role="status">{copied ? 'Copied' : ''}</span>}
+    </>
   )
 }
 

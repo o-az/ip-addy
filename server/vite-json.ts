@@ -10,17 +10,22 @@ async function middleware(req: IncomingMessage, res: ServerResponse, next: () =>
   // Local dev trusts the socket, not spoofable forwarding headers. A loopback
   // request represents the developer's own network, so resolve its public IP.
   let clientIp = req.socket.remoteAddress?.replace(/^::ffff:/, '')
-  if (/^\/(?:json|api\/json)\/?$/.test(url.pathname)
-    && (clientIp === '127.0.0.1' || clientIp === '::1')) {
-    clientIp = await fetchAddress('v4', AbortSignal.timeout(5000)) ?? undefined
+  if (
+    /^\/(?:json|api\/json)\/?$/.test(url.pathname) &&
+    (clientIp === '127.0.0.1' || clientIp === '::1')
+  ) {
+    clientIp = (await fetchAddress('v4', AbortSignal.timeout(5000))) ?? undefined
   }
 
   const controller = new AbortController()
   res.on('close', () => controller.abort())
-  const response = await jsonResponse(new Request(url, {
-    method: req.method,
-    signal: controller.signal,
-  }), clientIp)
+  const response = await jsonResponse(
+    new Request(url, {
+      method: req.method,
+      signal: controller.signal
+    }),
+    clientIp
+  )
   res.writeHead(response.status, Object.fromEntries(response.headers))
   res.end(Buffer.from(await response.arrayBuffer()))
 }
@@ -37,6 +42,6 @@ export function jsonRoutes(): Plugin {
       server.middlewares.use((req, res, next) => {
         middleware(req, res, next).catch(next)
       })
-    },
+    }
   }
 }

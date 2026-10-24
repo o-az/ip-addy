@@ -1,0 +1,48 @@
+#:schema https://mise.en.dev/schema/mise.json
+
+[settings]
+color = true
+pipx.uvx = true
+experimental = true
+color_theme = "charm"
+minimum_release_age_excludes = ["hk", "pkl", "bun", "node", "sqlite", "npm:oxfmt", "npm:oxlint", "github:nubjs/nub"]
+
+[env]
+HK_MISE = 1
+
+[tools]
+hk = "latest"
+pkl = "latest"
+bun = "1.4.4"
+node = "latest"
+tombi = "latest"
+usage = "latest"
+shfmt = "latest"
+ghalint = "latest"
+gitleaks = "latest"
+shellcheck = "latest"
+actionlint = "latest"
+betterleaks = "latest"
+"npm:oxfmt" = "latest"
+"npm:oxlint" = "latest"
+"github:nubjs/nub" = "latest"
+
+[hooks]
+postinstall = "hk install --mise"
+
+[tasks.ci]
+description = "run CI tasks"
+depends = ["build", "typecheck"]
+run = "hk fix --all && hk check --all"
+
+[tasks.check]
+description = "format & lint files"
+run = "hk check --all"
+
+[tasks.build]
+description = "build TS project"
+run = "bun run build"
+
+[tasks.typecheck]
+description = "type check JS/TS files"
+run = "bun tsc --project tsconfig.json --noEmit"

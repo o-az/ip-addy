@@ -4,7 +4,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
-  type ReactNode,
+  type ReactNode
 } from 'react'
 import { browserRows, deviceRows } from './lib/client'
 import { fetchAddress, isValidIp, lookupIp, type IpInfo } from './lib/ip'
@@ -63,7 +63,7 @@ function CopyButton({
   label,
   idleText = 'Copy',
   className = 'copy',
-  iconOnly = false,
+  iconOnly = false
 }: {
   text: string
   label: string
@@ -93,14 +93,34 @@ function CopyButton({
   // Text labels share a grid cell; icon feedback keeps the same dimensions.
   return (
     <>
-      <button type="button" className={className} onClick={copy} aria-label={label} title={label}>
+      <button
+        type='button'
+        className={className}
+        onClick={copy}
+        aria-label={label}
+        title={label}>
         {iconOnly ? (
           <>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {copied ? <path d="m5 12 4 4L19 6" /> : (
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='1.5'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              aria-hidden='true'>
+              {copied ? (
+                <path d='m5 12 4 4L19 6' />
+              ) : (
                 <>
-                  <rect x="8" y="8" width="12" height="12" rx="2" />
-                  <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+                  <rect
+                    x='8'
+                    y='8'
+                    width='12'
+                    height='12'
+                    rx='2'
+                  />
+                  <path d='M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3' />
                 </>
               )}
             </svg>
@@ -108,13 +128,21 @@ function CopyButton({
         ) : (
           <>
             <span className={copied ? 'hidden' : undefined}>{idleText}</span>
-            <span className={copied ? undefined : 'hidden'} aria-live="polite">
+            <span
+              className={copied ? undefined : 'hidden'}
+              aria-live='polite'>
               Copied
             </span>
           </>
         )}
       </button>
-      {iconOnly && <span className="sr-only" role="status">{copied ? 'Copied' : ''}</span>}
+      {iconOnly && (
+        <span
+          className='sr-only'
+          role='status'>
+          {copied ? 'Copied' : ''}
+        </span>
+      )}
     </>
   )
 }
@@ -131,7 +159,7 @@ function Clock({ timeZone }: { timeZone: string }) {
       weekday: 'short',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
+      second: '2-digit'
     }).format(now)
   } catch {
     return '—'
@@ -143,9 +171,16 @@ function MapBox({ lat, lon }: { lat: number; lon: number }) {
   const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${lon - d},${lat - d},${lon + d},${lat + d}&layer=mapnik&marker=${lat},${lon}`
   const link = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=11/${lat}/${lon}`
   return (
-    <div className="map">
-      <iframe title="Approximate location map" src={embed} loading="lazy" />
-      <a href={link} target="_blank" rel="noreferrer">
+    <div className='map'>
+      <iframe
+        title='Approximate location map'
+        src={embed}
+        loading='lazy'
+      />
+      <a
+        href={link}
+        target='_blank'
+        rel='noreferrer'>
         Open larger map ↗
       </a>
     </div>
@@ -164,7 +199,7 @@ function ipSections(info: IpInfo, ipv6: ReactNode | undefined): Section[] {
     ['Organization', dash(info.connection.org)],
     ['ASN', info.connection.asn ? `AS${info.connection.asn}` : '—'],
     ['Domain', dash(info.connection.domain)],
-    ['Hostname', dash(info.connection.hostname)],
+    ['Hostname', dash(info.connection.hostname)]
   ]
   return [
     { title: 'Network', rows: network },
@@ -179,12 +214,15 @@ function ipSections(info: IpInfo, ipv6: ReactNode | undefined): Section[] {
         ['Capital', dash(info.capital)],
         ['In the EU', yesNo(info.isEu)],
         ['Calling code', dash(info.callingCode)],
-        [
-          'Coordinates',
-          lat !== null && lon !== null ? `${lat.toFixed(4)}, ${lon.toFixed(4)}` : '—',
-        ],
+        ['Coordinates', lat !== null && lon !== null ? `${lat.toFixed(4)}, ${lon.toFixed(4)}` : '—']
       ],
-      footer: lat !== null && lon !== null ? <MapBox lat={lat} lon={lon} /> : undefined,
+      footer:
+        lat !== null && lon !== null ? (
+          <MapBox
+            lat={lat}
+            lon={lon}
+          />
+        ) : undefined
     },
     {
       title: 'Time',
@@ -193,20 +231,38 @@ function ipSections(info: IpInfo, ipv6: ReactNode | undefined): Section[] {
         ['Abbreviation', dash(info.timezone.abbr)],
         ['UTC offset', dash(info.timezone.utc)],
         ['Daylight saving', yesNo(info.timezone.isDst)],
-        ['Local time there', info.timezone.id ? <Clock key="there" timeZone={info.timezone.id} /> : '—'],
-        ['Your time', <Clock key="here" timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone} />],
-      ],
-    },
+        [
+          'Local time there',
+          info.timezone.id ? (
+            <Clock
+              key='there'
+              timeZone={info.timezone.id}
+            />
+          ) : (
+            '—'
+          )
+        ],
+        [
+          'Your time',
+          <Clock
+            key='here'
+            timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}
+          />
+        ]
+      ]
+    }
   ]
 }
 
 function InfoTable({ sections }: { sections: Section[] }) {
   return (
-    <table className="info">
-      {sections.map((section) => (
+    <table className='info'>
+      {sections.map(section => (
         <tbody key={section.title}>
           <tr>
-            <th colSpan={2} scope="colgroup">
+            <th
+              colSpan={2}
+              scope='colgroup'>
               {section.title}
             </th>
           </tr>
@@ -218,7 +274,9 @@ function InfoTable({ sections }: { sections: Section[] }) {
           ))}
           {section.footer && (
             <tr>
-              <td colSpan={2} className="section-footer">
+              <td
+                colSpan={2}
+                className='section-footer'>
                 {section.footer}
               </td>
             </tr>
@@ -238,7 +296,9 @@ export default function App() {
   // undefined = still resolving, null = not available on this network.
   const [v4, setV4] = useState<string | null | undefined>(undefined)
   const [v6, setV6] = useState<string | null | undefined>(undefined)
-  const [inputError, setInputError] = useState<string | null>(initial.invalid === null ? null : invalidMessage(initial.invalid))
+  const [inputError, setInputError] = useState<string | null>(
+    initial.invalid === null ? null : invalidMessage(initial.invalid)
+  )
 
   const [device] = useState(deviceRows)
   const [browser] = useState(browserRows)
@@ -248,20 +308,19 @@ export default function App() {
   const lookupKey = badIp !== null ? null : target || (v4 === undefined ? null : (v4 ?? ''))
 
   // A result for a previous key means the current lookup is still in flight.
-  const state: LookupState =
-    result && result.target === lookupKey ? result : { status: 'loading' }
+  const state: LookupState = result && result.target === lookupKey ? result : { status: 'loading' }
 
   useEffect(() => {
     if (lookupKey === null) return
     const controller = new AbortController()
     lookupIp(lookupKey, controller.signal)
-      .then((info) => setResult({ target: lookupKey, status: 'ready', info }))
+      .then(info => setResult({ target: lookupKey, status: 'ready', info }))
       .catch((err: unknown) => {
         if (!controller.signal.aborted)
           setResult({
             target: lookupKey,
             status: 'error',
-            message: err instanceof Error ? err.message : String(err),
+            message: err instanceof Error ? err.message : String(err)
           })
       })
     return () => controller.abort()
@@ -269,10 +328,10 @@ export default function App() {
 
   useEffect(() => {
     const controller = new AbortController()
-    fetchAddress('v4', controller.signal).then((ip) => {
+    void fetchAddress('v4', controller.signal).then(ip => {
       if (!controller.signal.aborted) setV4(ip)
     })
-    fetchAddress('v6', controller.signal).then((ip) => {
+    void fetchAddress('v6', controller.signal).then(ip => {
       if (!controller.signal.aborted) setV6(ip)
     })
     return () => controller.abort()
@@ -345,8 +404,18 @@ export default function App() {
     { title: 'Device', rows: device },
     {
       title: 'Browser',
-      rows: [...browser, ['User agent', <span key="ua" className="mono">{navigator.userAgent}</span>]],
-    },
+      rows: [
+        ...browser,
+        [
+          'User agent',
+          <span
+            key='ua'
+            className='mono'>
+            {navigator.userAgent}
+          </span>
+        ]
+      ]
+    }
   ]
 
   const json = info
@@ -355,62 +424,82 @@ export default function App() {
           ...info,
           ...(target ? {} : { addresses: { ipv4: v4 ?? null, ipv6: v6 ?? null } }),
           device: Object.fromEntries(device),
-          browser: { ...Object.fromEntries(browser), userAgent: navigator.userAgent },
+          browser: { ...Object.fromEntries(browser), userAgent: navigator.userAgent }
         },
         null,
-        2,
+        2
       )
     : null
 
   return (
     <main>
-      <header className="hero">
-        <div className="ip-line">
+      <header className='hero'>
+        <div className='ip-line'>
           <h1 className={info?.ip.includes(':') ? 'ip ip-v6' : 'ip'}>
             {badIp !== null ? (
               'Lookup failed'
             ) : state.status === 'loading' ? (
-              <span className="skeleton">000.000.000.000</span>
+              <span className='skeleton'>000.000.000.000</span>
             ) : info ? (
               info.ip
             ) : (
               'Lookup failed'
             )}
           </h1>
-          {info && <CopyButton text={info.ip} label="Copy IP address" className="ip-action" iconOnly />}
+          {info && (
+            <CopyButton
+              text={info.ip}
+              label='Copy IP address'
+              className='ip-action'
+              iconOnly
+            />
+          )}
         </div>
-        {state.status === 'error' && <p className="isp">{state.message}</p>}
-        {info && <p className="isp">{info.connection.isp ?? 'Unknown ISP'}</p>}
-        {badIp === null && state.status === 'loading' && <p className="isp">&nbsp;</p>}
-        <form className="lookup" onSubmit={onSubmit} onKeyDown={onKeyDown}>
-          <div className="lookup-field">
+        {state.status === 'error' && <p className='isp'>{state.message}</p>}
+        {info && <p className='isp'>{info.connection.isp ?? 'Unknown ISP'}</p>}
+        {badIp === null && state.status === 'loading' && <p className='isp'>&nbsp;</p>}
+        <form
+          className='lookup'
+          onSubmit={onSubmit}
+          onKeyDown={onKeyDown}>
+          <div className='lookup-field'>
             <input
-              className="ip-input"
+              className='ip-input'
               value={draft}
-              onChange={(e) => {
+              onChange={e => {
                 setDraft(e.target.value)
                 setInputError(null)
               }}
-              aria-label="IP address to look up"
+              aria-label='IP address to look up'
               aria-invalid={inputError !== null}
               aria-describedby={inputError ? 'ip-error' : undefined}
-              placeholder="Look up an IP address"
-              inputMode="text"
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
+              placeholder='Look up an IP address'
+              inputMode='text'
+              autoCapitalize='off'
+              autoComplete='off'
+              autoCorrect='off'
               spellCheck={false}
             />
-            <button type="submit" className="lookup-submit">Look up</button>
+            <button
+              type='submit'
+              className='lookup-submit'>
+              Look up
+            </button>
           </div>
           {inputError && (
-            <p className="input-error" id="ip-error" role="alert">
+            <p
+              className='input-error'
+              id='ip-error'
+              role='alert'>
               {inputError}
             </p>
           )}
         </form>
         {(target || badIp !== null) && (
-          <button type="button" className="copy my-ip" onClick={() => goTo('')}>
+          <button
+            type='button'
+            className='copy my-ip'
+            onClick={() => goTo('')}>
             My IP
           </button>
         )}
@@ -421,9 +510,9 @@ export default function App() {
       {json && (
         <CopyButton
           text={json}
-          label="Copy all details as JSON"
-          idleText="Copy all as JSON"
-          className="copy copy-json"
+          label='Copy all details as JSON'
+          idleText='Copy all as JSON'
+          className='copy copy-json'
         />
       )}
 

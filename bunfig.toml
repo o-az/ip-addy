@@ -1,0 +1,6 @@
+#:schema https://www.schemastore.org/bunfig.json
+
+telemetry = false
+
+[run]
+bun = false

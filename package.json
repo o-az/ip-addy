@@ -1,25 +1,34 @@
 {
   "name": "myip",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
+  "repository": "github:o-az/ip-addy",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "dev": "vite dev",
+    "build": "bun check:types && vite build --mode='production' --config='vite.config.ts'",
+    "preview": "vite preview",
+    "format": "oxfmt --config='oxfmt.config.ts' --write",
+    "lint": "oxlint --config='oxlint.config.ts' --type-aware --type-check --fix-dangerously",
+    "check": "bun format && bun lint",
+    "check:types": "bun tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
+    "@total-typescript/ts-reset": "^0.6.1",
+    "@types/bun": "^1.4.4",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.81.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.3.0"
-  }
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "packageManager": "bun@1.4.4"
 }

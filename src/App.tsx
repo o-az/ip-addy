@@ -1,7 +1,6 @@
 import {
   Fragment,
   useEffect,
-  useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
@@ -235,7 +234,6 @@ export default function App() {
   const [target, setTarget] = useState(initial.target) // '' means "my own IP"
   const [badIp, setBadIp] = useState(initial.invalid) // invalid URL value, never fetched
   const [draft, setDraft] = useState(initial.invalid ?? initial.target)
-  const inputRef = useRef<HTMLInputElement>(null)
   const [result, setResult] = useState<LookupResult | null>(null)
   // undefined = still resolving, null = not available on this network.
   const [v4, setV4] = useState<string | null | undefined>(undefined)
@@ -310,7 +308,6 @@ export default function App() {
     }
     setDraft(target)
     setInputError(null)
-    inputRef.current?.blur()
   }
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -388,7 +385,6 @@ export default function App() {
         <form className="lookup" onSubmit={onSubmit} onKeyDown={onKeyDown}>
           <div className="lookup-field">
             <input
-              ref={inputRef}
               className="ip-input"
               value={draft}
               onChange={(e) => {

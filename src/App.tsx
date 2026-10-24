@@ -415,7 +415,7 @@ export default function App() {
             ) : state.status === 'loading' ? (
               <span className="skeleton">000.000.000.000</span>
             ) : info ? (
-              <BreakableIp ip={info.ip} />
+              info.ip
             ) : (
               'Lookup failed'
             )}
